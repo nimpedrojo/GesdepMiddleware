@@ -15,6 +15,15 @@ const normalizeComparableText = (value: string | null | undefined) =>
     .trim()
     .toLowerCase() ?? '';
 
+const toComparableNameTokens = (value: string | null | undefined) =>
+  normalizeComparableText(value)
+    .replace(/,/g, ' ')
+    .split(' ')
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .sort()
+    .join(' ');
+
 export interface GesdepSyncServiceDeps {
   teamsUseCase: ListTeamsUseCase;
   playerUseCase: GetPlayerUseCase;
@@ -180,10 +189,18 @@ export class GesdepSyncService {
 
       const expectedFullName = normalizeComparableText(rosterPlayer.fullName);
       const actualFullName = normalizeComparableText(player.fullName);
+      const expectedFullNameTokens = toComparableNameTokens(rosterPlayer.fullName);
+      const actualFullNameTokens = toComparableNameTokens(player.fullName);
       const expectedShortName = normalizeComparableText(rosterPlayer.shortName);
       const actualShortName = normalizeComparableText(player.shortName);
 
-      if ((expectedFullName && actualFullName && expectedFullName !== actualFullName) || (expectedShortName && actualShortName && expectedShortName !== actualShortName)) {
+      const fullNameMismatch =
+        expectedFullName &&
+        actualFullName &&
+        expectedFullName !== actualFullName &&
+        expectedFullNameTokens !== actualFullNameTokens;
+
+      if (fullNameMismatch || (expectedShortName && actualShortName && expectedShortName !== actualShortName)) {
         return [
           {
             id: player.id,
@@ -213,10 +230,18 @@ export class GesdepSyncService {
 
       const expectedFullName = normalizeComparableText(rosterPlayer.fullName);
       const actualFullName = normalizeComparableText(player.fullName);
+      const expectedFullNameTokens = toComparableNameTokens(rosterPlayer.fullName);
+      const actualFullNameTokens = toComparableNameTokens(player.fullName);
       const expectedShortName = normalizeComparableText(rosterPlayer.shortName);
       const actualShortName = normalizeComparableText(player.shortName);
 
-      if ((expectedFullName && actualFullName && expectedFullName !== actualFullName) || (expectedShortName && actualShortName && expectedShortName !== actualShortName)) {
+      const fullNameMismatch =
+        expectedFullName &&
+        actualFullName &&
+        expectedFullName !== actualFullName &&
+        expectedFullNameTokens !== actualFullNameTokens;
+
+      if (fullNameMismatch || (expectedShortName && actualShortName && expectedShortName !== actualShortName)) {
         return {
           id: player.id,
           shortName: rosterPlayer.shortName,

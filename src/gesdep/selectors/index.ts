@@ -15,6 +15,11 @@ export const selectors = {
     name: 'tr:first-child td:first-child',
     code: 'tr:first-child td:last-child',
     activePanelTitle: '#ctl00_ContentPlaceHolder1_lblEquipos',
-    season: '#ctl00_lblTemporada'
+    season: '#ctl00_lblTemporada',
+    detailSummary: '#ctl00_ContentPlaceHolder1_lblDatos',
+    detailPlayers: '#ctl00_ContentPlaceHolder1_lblListaJuga',
+    detailPlayerRow: 'tr[onclick*="idjug="]',
+    detailPlayerShortName: 'td:nth-child(2) > div:first-child',
+    detailPlayerFullName: 'td:nth-child(2) > div:nth-child(2)'
   }
 };

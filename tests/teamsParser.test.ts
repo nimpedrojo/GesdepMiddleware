@@ -17,16 +17,39 @@ describe('TeamsParser', () => {
         name: 'JUVENIL PREFERENTE',
         category: null,
         season: '2025-26',
-        status: 'active'
+        status: 'active',
+        players: []
       },
       {
         id: '16A1FF67E07BE37D',
         name: '1ª JUVENIL',
         category: null,
         season: '2025-26',
-        status: 'active'
+        status: 'active',
+        players: []
       }
     ]);
+  });
+
+  it('parses team detail players from the fixture HTML', async () => {
+    const html = await readFile(fixturePath, 'utf8');
+    const parser = new TeamsParser();
+
+    expect(parser.parseTeamDetails(html)).toEqual({
+      category: 'Juvenil',
+      players: [
+        {
+          id: '3532EB3E6AD61628',
+          shortName: 'JUAN',
+          fullName: 'BENITO FERNANDEZ, JUAN'
+        },
+        {
+          id: '8524CE5A2F109799',
+          shortName: 'HÉCTOR',
+          fullName: 'CANTALAPIEDRA VIELA, HÉCTOR'
+        }
+      ]
+    });
   });
 
   it('throws a typed parsing error when the structure is invalid', () => {

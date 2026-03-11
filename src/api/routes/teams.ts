@@ -23,13 +23,25 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
               type: 'array',
               items: {
                 type: 'object',
-                required: ['id', 'name', 'category', 'season', 'status'],
+                required: ['id', 'name', 'category', 'season', 'status', 'players'],
                 properties: {
                   id: { type: 'string' },
                   name: { type: 'string' },
                   category: { type: ['string', 'null'] },
                   season: { type: ['string', 'null'] },
-                  status: { type: ['string', 'null'] }
+                  status: { type: ['string', 'null'] },
+                  players: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      required: ['id', 'shortName', 'fullName'],
+                      properties: {
+                        id: { type: 'string' },
+                        shortName: { type: 'string' },
+                        fullName: { type: 'string' }
+                      }
+                    }
+                  }
                 }
               }
             },

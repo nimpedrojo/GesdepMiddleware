@@ -21,6 +21,13 @@ export class GesdepClient {
     }
   }
 
+  private async openAuthenticatedPage(): Promise<Page> {
+    return this.login({
+      username: config.GESDEP_USERNAME,
+      password: config.GESDEP_PASSWORD
+    });
+  }
+
   async login(credentials: LoginCredentials): Promise<Page> {
     await this.init();
     const page = await this.browserContext!.newPage();
@@ -55,10 +62,7 @@ export class GesdepClient {
   }
 
   async openTeamsPage(): Promise<Page> {
-    const page = await this.login({
-      username: config.GESDEP_USERNAME,
-      password: config.GESDEP_PASSWORD
-    });
+    const page = await this.openAuthenticatedPage();
 
     try {
       await page.goto(new URL(selectors.teams.path, config.GESDEP_BASE_URL).toString(), {
@@ -85,6 +89,71 @@ export class GesdepClient {
       throw new ExternalServiceError('Failed to read Gesdep teams HTML');
     } finally {
       await page.close();
+    }
+  }
+
+  async fetchTeamHtml(teamId: string): Promise<string> {
+    const page = await this.openAuthenticatedPage();
+
+    try {
+      await page.goto(new URL(`${selectors.teams.path}?idequ=${encodeURIComponent(teamId)}`, config.GESDEP_BASE_URL).toString(), {
+        waitUntil: 'domcontentloaded'
+      });
+      await page.waitForSelector(selectors.teams.detailPlayers, {
+        state: 'attached'
+      });
+      return await page.content();
+    } catch (err) {
+      logger.error({ err, teamId }, 'Reading team detail HTML failed');
+      throw new ExternalServiceError('Failed to read Gesdep team detail HTML');
+    } finally {
+      await page.close();
+    }
+  }
+
+  async fetchTeamHtmlBatch(teamIds: string[]): Promise<Record<string, string>> {
+    if (teamIds.length === 0) {
+      return {};
+    }
+
+    const authPage = await this.openAuthenticatedPage();
+    const results: Record<string, string> = {};
+    const pendingTeamIds = [...teamIds];
+
+    const worker = async () => {
+      while (pendingTeamIds.length > 0) {
+        const teamId = pendingTeamIds.shift();
+
+        if (!teamId) {
+          return;
+        }
+
+        const page = await this.browserContext!.newPage();
+
+        try {
+          await page.goto(new URL(`${selectors.teams.path}?idequ=${encodeURIComponent(teamId)}`, config.GESDEP_BASE_URL).toString(), {
+            waitUntil: 'domcontentloaded'
+          });
+          await page.waitForSelector(selectors.teams.detailPlayers, {
+            state: 'attached'
+          });
+          results[teamId] = await page.content();
+        } catch (err) {
+          logger.error({ err, teamId }, 'Reading team detail HTML failed in batch mode');
+          throw new ExternalServiceError('Failed to read Gesdep team detail HTML');
+        } finally {
+          await page.close();
+        }
+      }
+    };
+
+    try {
+      await Promise.all(
+        Array.from({ length: Math.min(config.GESDEP_DETAIL_CONCURRENCY, teamIds.length) }, async () => worker())
+      );
+      return results;
+    } finally {
+      await authPage.close();
     }
   }
 }

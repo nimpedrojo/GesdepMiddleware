@@ -12,6 +12,7 @@ const envSchema = z.object({
     .default('true')
     .transform((v) => v === 'true' || v === '1')
     .pipe(z.boolean()),
+  GESDEP_DETAIL_CONCURRENCY: z.coerce.number().int().min(1).max(12).default(6),
   GESDEP_USERNAME: z.string(),
   GESDEP_PASSWORD: z.string(),
   DATABASE_HOST: z.string().default('localhost'),

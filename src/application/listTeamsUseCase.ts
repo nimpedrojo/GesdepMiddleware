@@ -5,6 +5,8 @@ import { ParsingError } from '../shared/errors.js';
 
 export interface TeamsNavigator {
   fetchTeamsHtml(): Promise<string>;
+  fetchTeamHtml(teamId: string): Promise<string>;
+  fetchTeamHtmlBatch?(teamIds: string[]): Promise<Record<string, string>>;
 }
 
 export interface ListTeamsUseCaseDeps {
@@ -24,6 +26,22 @@ export class ListTeamsUseCase {
 
     try {
       const items = this.parser.parse(html);
+      const detailHtmlByTeamId = this.deps.navigator.fetchTeamHtmlBatch
+        ? await this.deps.navigator.fetchTeamHtmlBatch(items.map((item) => item.id))
+        : Object.fromEntries(await Promise.all(items.map(async (item) => [item.id, await this.deps.navigator.fetchTeamHtml(item.id)])));
+
+      for (const item of items) {
+        const teamHtml = detailHtmlByTeamId[item.id];
+
+        if (!teamHtml) {
+          continue;
+        }
+
+        const detail = this.parser.parseTeamDetails(teamHtml);
+        item.category = detail.category;
+        item.players = detail.players;
+      }
+
       return listTeamsResponseSchema.parse({
         items,
         meta: {

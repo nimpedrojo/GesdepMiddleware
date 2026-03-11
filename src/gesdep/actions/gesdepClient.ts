@@ -58,29 +58,9 @@ export class GesdepClient {
     }
   }
 
-  private extractPlayerViewToken(html: string): string | null {
-    const match = html.match(/frmjugadores\.aspx\?[^"'<>]*\bvb=([^&"'<>]+)/i);
-    return match?.[1] ?? null;
-  }
-
   private async resolvePlayerDetailUrl(page: Page, playerId: string): Promise<string> {
-    const baseUrl = new URL(selectors.players.path, config.GESDEP_BASE_URL);
-    await page.goto(baseUrl.toString(), {
-      waitUntil: 'domcontentloaded'
-    });
-    await page.waitForSelector(selectors.players.card, {
-      state: 'attached'
-    });
-
-    const html = await page.content();
-    const viewToken = this.extractPlayerViewToken(html);
     const detailUrl = new URL(selectors.players.path, config.GESDEP_BASE_URL);
-
-    if (viewToken) {
-      detailUrl.searchParams.set('vb', viewToken);
-    }
-
-    detailUrl.searchParams.set('idjug', playerId);
+    detailUrl.searchParams.set('idj', playerId);
     return detailUrl.toString();
   }
 
@@ -182,8 +162,6 @@ export class GesdepClient {
       });
 
       try {
-        const playerDetailBaseUrl = await this.resolvePlayerDetailUrl(page, playerIds[0]);
-
         while (pendingPlayerIds.length > 0) {
           const playerId = pendingPlayerIds.shift();
 
@@ -191,10 +169,7 @@ export class GesdepClient {
             return;
           }
 
-          const playerDetailUrl = new URL(playerDetailBaseUrl);
-          playerDetailUrl.searchParams.set('idjug', playerId);
-
-          await page.goto(playerDetailUrl.toString(), {
+          await page.goto(await this.resolvePlayerDetailUrl(page, playerId), {
             waitUntil: 'domcontentloaded'
           });
           await page.waitForSelector(selectors.players.card, {

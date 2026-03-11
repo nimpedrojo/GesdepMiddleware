@@ -54,4 +54,23 @@ export class PlayerRepository {
       );
     });
   }
+
+  async upsert(player: PlayerDetail, syncedAt: Date): Promise<void> {
+    await this.knex('players')
+      .insert({
+        id: player.id,
+        short_name: player.shortName,
+        full_name: player.fullName,
+        fields_json: JSON.stringify(player.fields),
+        synced_at: syncedAt
+      })
+      .onConflict('id')
+      .merge({
+        short_name: player.shortName,
+        full_name: player.fullName,
+        fields_json: JSON.stringify(player.fields),
+        synced_at: syncedAt,
+        updated_at: this.knex.fn.now()
+      });
+  }
 }

@@ -22,7 +22,7 @@ export class PlayerReadService {
   async getById(playerId: string): Promise<GetPlayerResponse> {
     return this.cache.remember(`player:${playerId}`, config.CACHE_TTL_PLAYER_SECONDS, async () => {
       const item = await this.repository.findById(playerId);
-      if (item) {
+      if (item && Object.keys(item.fields).length > 0) {
         return getPlayerResponseSchema.parse({
           item,
           meta: {
@@ -32,10 +32,21 @@ export class PlayerReadService {
       }
 
       if (!this.deps.onlineUseCase) {
+        if (item) {
+          return getPlayerResponseSchema.parse({
+            item,
+            meta: {
+              source: 'mysql'
+            }
+          });
+        }
+
         throw new Error(`Player ${playerId} not found`);
       }
 
-      return this.deps.onlineUseCase.execute(playerId);
+      const onlinePayload = await this.deps.onlineUseCase.execute(playerId);
+      await this.repository.upsert(onlinePayload.item, new Date());
+      return onlinePayload;
     });
   }
 }

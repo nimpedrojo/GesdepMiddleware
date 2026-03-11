@@ -12,7 +12,8 @@ describe('PlayerReadService', () => {
         fields: {
           equipo: 'Cadete A'
         }
-      })
+      }),
+      upsert: vi.fn()
     };
 
     const onlineUseCase = {
@@ -44,7 +45,8 @@ describe('PlayerReadService', () => {
 
   it('falls back to online when repository misses the player', async () => {
     const repository = {
-      findById: vi.fn().mockResolvedValue(null)
+      findById: vi.fn().mockResolvedValue(null),
+      upsert: vi.fn().mockResolvedValue(undefined)
     };
 
     const onlineUseCase = {
@@ -78,5 +80,73 @@ describe('PlayerReadService', () => {
         source: 'gesdep'
       }
     });
+
+    expect(repository.upsert).toHaveBeenCalledWith({
+      id: 'PLAYER-2',
+      shortName: 'Samu',
+      fullName: 'ESTEBAN, SAMU',
+      fields: {}
+    }, expect.any(Date));
+  });
+
+  it('falls back to online when repository has only a basic player snapshot', async () => {
+    const repository = {
+      findById: vi.fn().mockResolvedValue({
+        id: 'PLAYER-3',
+        shortName: 'Juan',
+        fullName: 'BENITO FERNANDEZ, JUAN',
+        fields: {}
+      }),
+      upsert: vi.fn().mockResolvedValue(undefined)
+    };
+
+    const onlineUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        item: {
+          id: 'PLAYER-3',
+          shortName: 'Juan',
+          fullName: 'BENITO FERNANDEZ, JUAN',
+          fields: {
+            equipo: 'Juvenil Preferente',
+            nacionalidad: 'ESPAÑOLA'
+          }
+        },
+        meta: {
+          source: 'gesdep'
+        }
+      })
+    };
+
+    const service = new PlayerReadService({
+      repository: repository as any,
+      onlineUseCase: onlineUseCase as any,
+      cache: new MemoryCache()
+    });
+
+    await expect(service.getById('PLAYER-3')).resolves.toEqual({
+      item: {
+        id: 'PLAYER-3',
+        shortName: 'Juan',
+        fullName: 'BENITO FERNANDEZ, JUAN',
+        fields: {
+          equipo: 'Juvenil Preferente',
+          nacionalidad: 'ESPAÑOLA'
+        }
+      },
+      meta: {
+        source: 'gesdep'
+      }
+    });
+
+    expect(onlineUseCase.execute).toHaveBeenCalledWith('PLAYER-3');
+    expect(repository.upsert).toHaveBeenCalledWith({
+      id: 'PLAYER-3',
+      shortName: 'Juan',
+      fullName: 'BENITO FERNANDEZ, JUAN',
+      fields: {
+        equipo: 'Juvenil Preferente',
+        nacionalidad: 'ESPAÑOLA'
+      }
+    }, expect.any(Date));
   });
 });

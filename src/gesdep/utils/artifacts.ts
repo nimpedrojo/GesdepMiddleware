@@ -28,3 +28,12 @@ export const saveHtml = async (page: Page, label: string) => {
   logger.info({ html: filename }, 'Saved page HTML');
   return filename;
 };
+
+export const saveHtmlSnapshot = async (html: string, label: string) => {
+  const dir = HTML_DIR;
+  await ensureDir(dir);
+  const filename = join(dir, `${timestamp()}-${label}.html`);
+  await writeFile(filename, html, 'utf8');
+  logger.info({ html: filename }, 'Saved raw HTML snapshot');
+  return filename;
+};

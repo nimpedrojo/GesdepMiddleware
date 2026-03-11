@@ -1,5 +1,5 @@
 export class AppError extends Error {
-  constructor(message: string, public readonly statusCode = 500, public readonly context?: Record<string, unknown>) {
+  constructor(message: string, public readonly statusCode = 500, public context?: Record<string, unknown>) {
     super(message);
     this.name = this.constructor.name;
   }
@@ -20,5 +20,11 @@ export class AuthError extends AppError {
 export class ExternalServiceError extends AppError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, 502, context);
+  }
+}
+
+export class ParsingError extends AppError {
+  constructor(message: string, context?: Record<string, unknown>) {
+    super(message, 422, context);
   }
 }

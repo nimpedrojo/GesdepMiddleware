@@ -5,6 +5,10 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(3000),
   LOG_LEVEL: z.string().default('info'),
+  API_AUTH_USERNAME: z.string().default('admin'),
+  API_AUTH_PASSWORD: z.string().default('admin'),
+  API_JWT_SECRET: z.string().default('dev-only-jwt-secret'),
+  API_JWT_EXPIRES_IN: z.string().default('1d'),
   GESDEP_BASE_URL: z.string().url().default('https://gesdep.net'),
   GESDEP_HEADLESS: z
     .string()

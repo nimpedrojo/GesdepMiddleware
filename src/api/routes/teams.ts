@@ -16,9 +16,11 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
   app.get<{
     Reply: ListTeamsResponse;
   }>('/teams', {
+    preHandler: async (request, reply) => app.authenticate(request, reply),
     schema: {
       tags: ['teams'],
       summary: 'Listado básico de equipos',
+      security: [{ bearerAuth: [] }],
       response: {
         200: {
           type: 'object',
@@ -58,9 +60,11 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
   app.get<{
     Reply: ListTeamsExtendedResponse;
   }>('/teams/extended', {
+    preHandler: async (request, reply) => app.authenticate(request, reply),
     schema: {
       tags: ['teams'],
       summary: 'Listado extendido de equipos con roster',
+      security: [{ bearerAuth: [] }],
       response: {
         200: {
           type: 'object',

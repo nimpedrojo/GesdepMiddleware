@@ -27,6 +27,9 @@ cp .env.example .env   # fill credentials (GESDEP_*) and DB settings
 ```
 
 Variables obligatorias:
+- `API_AUTH_USERNAME`
+- `API_AUTH_PASSWORD`
+- `API_JWT_SECRET`
 - `GESDEP_USERNAME`
 - `GESDEP_PASSWORD`
 - `DATABASE_HOST`
@@ -98,6 +101,7 @@ Los artefactos de debugging se guardan en:
 ## Endpoints
 ```bash
 GET /health
+POST /auth/token
 GET /teams
 GET /teams/extended
 GET /players/:id
@@ -105,7 +109,29 @@ GET /docs
 GET /docs/json
 ```
 
+Autenticacion:
+- `POST /auth/token` devuelve un Bearer token JWT
+- `GET /teams`
+- `GET /teams/extended`
+- `GET /players/:id`
+
+Ejemplo:
+```bash
+curl -X POST http://localhost:3000/auth/token \
+  -H 'content-type: application/json' \
+  -d '{"username":"admin","password":"change-me"}'
+```
+
+Luego usa el token:
+```bash
+curl http://localhost:3000/teams \
+  -H "authorization: Bearer TU_TOKEN"
+```
+
 Semántica actual:
+- `/auth/token`:
+  - valida credenciales propias de la API
+  - emite un JWT Bearer
 - `/teams`:
   - lectura desde cache o MySQL
   - fallback online si la BD aún no tiene datos

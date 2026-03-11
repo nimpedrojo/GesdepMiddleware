@@ -5,10 +5,12 @@ import swaggerUi from '@fastify/swagger-ui';
 import { logger } from '../shared/logger.js';
 import { config } from '../shared/config.js';
 import { registerHealthRoute } from './routes/health.js';
+import { registerAuthRoute } from './routes/auth.js';
 import { AppError } from '../shared/errors.js';
 import { registerTeamsRoute, RegisterTeamsRouteDeps } from './routes/teams.js';
 import { registerPlayersRoute, RegisterPlayersRouteDeps } from './routes/players.js';
 import { ensureDatabaseSchema } from '../db/schema.js';
+import { authPlugin } from './auth.js';
 
 export interface BuildServerDeps {
   teamsRoute?: RegisterTeamsRouteDeps;
@@ -19,6 +21,7 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
   const app = Fastify({ logger: logger as any });
 
   app.register(cors, { origin: true });
+  app.register(authPlugin);
   app.register(swagger, {
     openapi: {
       info: {
@@ -33,10 +36,20 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
         }
       ],
       tags: [
+        { name: 'auth', description: 'Autenticacion de la API' },
         { name: 'health', description: 'Estado del servicio' },
         { name: 'teams', description: 'Equipos y roster' },
         { name: 'players', description: 'Detalle de jugadores' }
-      ]
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT'
+          }
+        }
+      }
     }
   });
   app.register(swaggerUi, {
@@ -46,6 +59,7 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
       deepLinking: false
     }
   });
+  registerAuthRoute(app);
   registerHealthRoute(app);
   registerTeamsRoute(app, deps.teamsRoute);
   registerPlayersRoute(app, deps.playersRoute);

@@ -17,9 +17,11 @@ export const registerPlayersRoute = (app: FastifyInstance, deps: RegisterPlayers
     Params: { id: string };
     Reply: GetPlayerResponse;
   }>('/players/:id', {
+    preHandler: async (request, reply) => app.authenticate(request, reply),
     schema: {
       tags: ['players'],
       summary: 'Detalle de un jugador',
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],

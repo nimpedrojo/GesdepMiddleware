@@ -61,6 +61,36 @@ const summarizeMatches = (matches: TeamMatch[]) => {
   return { total, home, away };
 };
 
+const parseSummaryValues = (html: string) => {
+  const $ = load(html);
+  const values = $('#ctl00_ContentPlaceHolder1_lblEstadisticas td[bgcolor=\"White\"], #ctl00_ContentPlaceHolder1_lblEstadisticas td[bgcolor=\"white\"]')
+    .map((_index, element) => normalizeText($(element).text()))
+    .get()
+    .filter(Boolean)
+    .map((value) => Number(value))
+    .filter((value) => !Number.isNaN(value));
+
+  if (values.length !== 21) {
+    return null;
+  }
+
+  const toBlock = (offset: number): MatchStatsBlock => ({
+    played: values[offset],
+    won: values[offset + 1],
+    drawn: values[offset + 2],
+    lost: values[offset + 3],
+    goalsFor: values[offset + 4],
+    goalsAgainst: values[offset + 5],
+    points: values[offset + 6]
+  });
+
+  return {
+    total: toBlock(0),
+    home: toBlock(7),
+    away: toBlock(14)
+  };
+};
+
 const extractMatchIdFromOnClick = (value?: string | null) => {
   if (!value) return null;
   const match = value.match(/[?&]idp=([^"&]+)/i);
@@ -117,7 +147,7 @@ export class TeamMatchStatsParser {
       });
     });
 
-    const summary = summarizeMatches(matches);
+    const summary = parseSummaryValues(html) ?? summarizeMatches(matches);
 
     return teamMatchStatsResponseSchema.shape.item.parse({
       teamId,
@@ -136,8 +166,7 @@ export class TeamMatchStatsParser {
         won: summary.total.won,
         drawn: summary.total.drawn,
         lost: summary.total.lost
-      },
-      matches
+      }
     });
   }
 }

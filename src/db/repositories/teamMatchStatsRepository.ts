@@ -2,60 +2,37 @@ import { Knex } from 'knex';
 import {
   MatchCompetition,
   MatchResultFilter,
-  TeamMatch,
   TeamMatchStatsResponse,
   teamMatchStatsResponseSchema
 } from '../../domain/types.js';
 import { db } from '../knex.js';
 
-type TeamMatchRow = {
-  match_id: string;
+type SnapshotRow = {
   team_id: string;
-  team_name: string;
-  opponent_name: string;
-  is_home: number | boolean;
-  team_score: number;
-  opponent_score: number;
-  result: 'won' | 'drawn' | 'lost';
-  competition: 'league' | 'cup' | 'friendly' | 'tournament';
-  kickoff_at: string;
-  venue: string | null;
-};
-
-const emptyBlock = () => ({
-  played: 0,
-  won: 0,
-  drawn: 0,
-  lost: 0,
-  goalsFor: 0,
-  goalsAgainst: 0,
-  points: 0
-});
-
-const summarize = (matches: TeamMatch[]) => {
-  const total = emptyBlock();
-  const home = emptyBlock();
-  const away = emptyBlock();
-
-  for (const match of matches) {
-    const target = match.isHome ? home : away;
-    for (const block of [total, target]) {
-      block.played += 1;
-      block.goalsFor += match.teamScore;
-      block.goalsAgainst += match.opponentScore;
-      if (match.result === 'won') {
-        block.won += 1;
-        block.points += 3;
-      } else if (match.result === 'drawn') {
-        block.drawn += 1;
-        block.points += 1;
-      } else {
-        block.lost += 1;
-      }
-    }
-  }
-
-  return { total, home, away };
+  competition: MatchCompetition;
+  result: MatchResultFilter;
+  team_name: string | null;
+  total_played: number;
+  total_won: number;
+  total_drawn: number;
+  total_lost: number;
+  total_goals_for: number;
+  total_goals_against: number;
+  total_points: number;
+  home_played: number;
+  home_won: number;
+  home_drawn: number;
+  home_lost: number;
+  home_goals_for: number;
+  home_goals_against: number;
+  home_points: number;
+  away_played: number;
+  away_won: number;
+  away_drawn: number;
+  away_lost: number;
+  away_goals_for: number;
+  away_goals_against: number;
+  away_points: number;
 };
 
 export class TeamMatchStatsRepository {
@@ -67,49 +44,57 @@ export class TeamMatchStatsRepository {
   }
 
   async get(teamId: string, competition: MatchCompetition, result: MatchResultFilter): Promise<TeamMatchStatsResponse | null> {
-    const teamName = await this.findTeamName(teamId);
-    if (!teamName) return null;
-
-    let query = this.knex<TeamMatchRow>('team_matches')
+    const row = await this.knex<SnapshotRow>('team_match_stat_snapshots')
       .select('*')
-      .where({ team_id: teamId });
+      .where({ team_id: teamId, competition, result })
+      .first();
 
-    if (competition !== 'all') {
-      query = query.andWhere('competition', competition);
+    if (!row) {
+      return null;
     }
-    if (result !== 'all') {
-      query = query.andWhere('result', result);
-    }
-
-    const rows = await query.orderBy('kickoff_at', 'desc');
-    const matches: TeamMatch[] = rows.map((row) => ({
-      matchId: row.match_id,
-      teamId: row.team_id,
-      teamName: row.team_name,
-      opponentName: row.opponent_name,
-      isHome: Boolean(row.is_home),
-      teamScore: row.team_score,
-      opponentScore: row.opponent_score,
-      result: row.result,
-      competition: row.competition,
-      kickoffAt: row.kickoff_at,
-      venue: row.venue
-    }));
-
-    const summary = summarize(matches);
 
     return teamMatchStatsResponseSchema.parse({
       item: {
         teamId,
-        teamName,
-        filters: { competition, result },
-        summary,
-        chart: {
-          won: summary.total.won,
-          drawn: summary.total.drawn,
-          lost: summary.total.lost
+        teamName: row.team_name,
+        filters: {
+          competition,
+          result
         },
-        matches
+        summary: {
+          total: {
+            played: row.total_played,
+            won: row.total_won,
+            drawn: row.total_drawn,
+            lost: row.total_lost,
+            goalsFor: row.total_goals_for,
+            goalsAgainst: row.total_goals_against,
+            points: row.total_points
+          },
+          home: {
+            played: row.home_played,
+            won: row.home_won,
+            drawn: row.home_drawn,
+            lost: row.home_lost,
+            goalsFor: row.home_goals_for,
+            goalsAgainst: row.home_goals_against,
+            points: row.home_points
+          },
+          away: {
+            played: row.away_played,
+            won: row.away_won,
+            drawn: row.away_drawn,
+            lost: row.away_lost,
+            goalsFor: row.away_goals_for,
+            goalsAgainst: row.away_goals_against,
+            points: row.away_points
+          }
+        },
+        chart: {
+          won: row.total_won,
+          drawn: row.total_drawn,
+          lost: row.total_lost
+        }
       },
       meta: {
         source: 'mysql'
@@ -117,27 +102,67 @@ export class TeamMatchStatsRepository {
     });
   }
 
-  async replaceAllForTeam(teamId: string, matches: TeamMatch[], syncedAt: Date): Promise<void> {
-    await this.knex.transaction(async (trx) => {
-      await trx('team_matches').where({ team_id: teamId }).del();
-      if (matches.length === 0) return;
-
-      await trx('team_matches').insert(
-        matches.map((match) => ({
-          match_id: match.matchId,
-          team_id: match.teamId,
-          team_name: match.teamName,
-          opponent_name: match.opponentName,
-          is_home: match.isHome,
-          team_score: match.teamScore,
-          opponent_score: match.opponentScore,
-          result: match.result,
-          competition: match.competition,
-          kickoff_at: match.kickoffAt,
-          venue: match.venue,
-          synced_at: syncedAt
-        }))
-      );
-    });
+  async replaceSnapshot(
+    teamId: string,
+    competition: MatchCompetition,
+    result: MatchResultFilter,
+    payload: TeamMatchStatsResponse['item'],
+    syncedAt: Date
+  ): Promise<void> {
+    await this.knex('team_match_stat_snapshots')
+      .insert({
+        team_id: teamId,
+        competition,
+        result,
+        team_name: payload.teamName,
+        total_played: payload.summary.total.played,
+        total_won: payload.summary.total.won,
+        total_drawn: payload.summary.total.drawn,
+        total_lost: payload.summary.total.lost,
+        total_goals_for: payload.summary.total.goalsFor,
+        total_goals_against: payload.summary.total.goalsAgainst,
+        total_points: payload.summary.total.points,
+        home_played: payload.summary.home.played,
+        home_won: payload.summary.home.won,
+        home_drawn: payload.summary.home.drawn,
+        home_lost: payload.summary.home.lost,
+        home_goals_for: payload.summary.home.goalsFor,
+        home_goals_against: payload.summary.home.goalsAgainst,
+        home_points: payload.summary.home.points,
+        away_played: payload.summary.away.played,
+        away_won: payload.summary.away.won,
+        away_drawn: payload.summary.away.drawn,
+        away_lost: payload.summary.away.lost,
+        away_goals_for: payload.summary.away.goalsFor,
+        away_goals_against: payload.summary.away.goalsAgainst,
+        away_points: payload.summary.away.points,
+        synced_at: syncedAt
+      })
+      .onConflict(['team_id', 'competition', 'result'])
+      .merge({
+        team_name: payload.teamName,
+        total_played: payload.summary.total.played,
+        total_won: payload.summary.total.won,
+        total_drawn: payload.summary.total.drawn,
+        total_lost: payload.summary.total.lost,
+        total_goals_for: payload.summary.total.goalsFor,
+        total_goals_against: payload.summary.total.goalsAgainst,
+        total_points: payload.summary.total.points,
+        home_played: payload.summary.home.played,
+        home_won: payload.summary.home.won,
+        home_drawn: payload.summary.home.drawn,
+        home_lost: payload.summary.home.lost,
+        home_goals_for: payload.summary.home.goalsFor,
+        home_goals_against: payload.summary.home.goalsAgainst,
+        home_points: payload.summary.home.points,
+        away_played: payload.summary.away.played,
+        away_won: payload.summary.away.won,
+        away_drawn: payload.summary.away.drawn,
+        away_lost: payload.summary.away.lost,
+        away_goals_for: payload.summary.away.goalsFor,
+        away_goals_against: payload.summary.away.goalsAgainst,
+        away_points: payload.summary.away.points,
+        synced_at: syncedAt
+      });
   }
 }

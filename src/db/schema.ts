@@ -95,24 +95,38 @@ export const ensureDatabaseSchema = async () => {
     });
   }
 
-  const hasTeamMatches = await db.schema.hasTable('team_matches');
-  if (!hasTeamMatches) {
-    await db.schema.createTable('team_matches', (table) => {
-      table.string('match_id', 64).primary();
+  const hasTeamMatchStatSnapshots = await db.schema.hasTable('team_match_stat_snapshots');
+  if (!hasTeamMatchStatSnapshots) {
+    await db.schema.createTable('team_match_stat_snapshots', (table) => {
       table.string('team_id', 64).notNullable();
-      table.string('team_name', 255).notNullable();
-      table.string('opponent_name', 255).notNullable();
-      table.boolean('is_home').notNullable();
-      table.integer('team_score').notNullable();
-      table.integer('opponent_score').notNullable();
-      table.string('result', 16).notNullable();
       table.string('competition', 32).notNullable();
-      table.string('kickoff_at', 64).notNullable();
-      table.string('venue', 255).nullable();
+      table.string('result', 16).notNullable();
+      table.string('team_name', 255).nullable();
+      table.integer('total_played').notNullable().defaultTo(0);
+      table.integer('total_won').notNullable().defaultTo(0);
+      table.integer('total_drawn').notNullable().defaultTo(0);
+      table.integer('total_lost').notNullable().defaultTo(0);
+      table.integer('total_goals_for').notNullable().defaultTo(0);
+      table.integer('total_goals_against').notNullable().defaultTo(0);
+      table.integer('total_points').notNullable().defaultTo(0);
+      table.integer('home_played').notNullable().defaultTo(0);
+      table.integer('home_won').notNullable().defaultTo(0);
+      table.integer('home_drawn').notNullable().defaultTo(0);
+      table.integer('home_lost').notNullable().defaultTo(0);
+      table.integer('home_goals_for').notNullable().defaultTo(0);
+      table.integer('home_goals_against').notNullable().defaultTo(0);
+      table.integer('home_points').notNullable().defaultTo(0);
+      table.integer('away_played').notNullable().defaultTo(0);
+      table.integer('away_won').notNullable().defaultTo(0);
+      table.integer('away_drawn').notNullable().defaultTo(0);
+      table.integer('away_lost').notNullable().defaultTo(0);
+      table.integer('away_goals_for').notNullable().defaultTo(0);
+      table.integer('away_goals_against').notNullable().defaultTo(0);
+      table.integer('away_points').notNullable().defaultTo(0);
       table.timestamp('synced_at').notNullable();
+      table.primary(['team_id', 'competition', 'result']);
       table.foreign('team_id').references('teams.id').onDelete('CASCADE');
-      table.index(['team_id', 'competition']);
-      table.index(['team_id', 'result']);
+      table.index(['team_id']);
     });
   }
 };

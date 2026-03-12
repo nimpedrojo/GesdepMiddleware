@@ -17,8 +17,7 @@ describe('team match stats route', () => {
                   home: { played: 1, won: 1, drawn: 0, lost: 0, goalsFor: 2, goalsAgainst: 1, points: 3 },
                   away: { played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
                 },
-                chart: { won: 1, drawn: 0, lost: 0 },
-                matches: []
+                chart: { won: 1, drawn: 0, lost: 0 }
               },
               meta: { source: 'mysql' as const }
             };

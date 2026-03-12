@@ -11,8 +11,7 @@ describe('TeamMatchStatsReadService', () => {
             teamName: 'JUVENIL PREFERENTE',
             filters: { competition: 'all', result: 'all' },
             summary: { total: {}, home: {}, away: {} },
-            chart: { won: 1, drawn: 0, lost: 1 },
-            matches: [{ matchId: 'M1' }]
+            chart: { won: 1, drawn: 0, lost: 1 }
           },
           meta: { source: 'mysql' as const }
         })
@@ -29,8 +28,7 @@ describe('TeamMatchStatsReadService', () => {
         teamName: 'JUVENIL PREFERENTE',
         filters: { competition: 'league', result: 'won' },
         summary: { total: {}, home: {}, away: {} },
-        chart: { won: 1, drawn: 0, lost: 0 },
-        matches: [{ matchId: 'M1' }]
+        chart: { won: 1, drawn: 0, lost: 0 }
       },
       meta: { source: 'gesdep' as const }
     });

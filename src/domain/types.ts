@@ -128,8 +128,7 @@ export const teamMatchStatsResponseSchema = z.object({
       won: z.number().int().nonnegative(),
       drawn: z.number().int().nonnegative(),
       lost: z.number().int().nonnegative()
-    }),
-    matches: z.array(teamMatchSchema)
+    })
   }),
   meta: z.object({
     source: sourceSchema

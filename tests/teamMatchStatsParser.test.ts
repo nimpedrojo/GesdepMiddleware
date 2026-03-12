@@ -39,23 +39,6 @@ describe('TeamMatchStatsParser', () => {
     expect(parsed.teamId).toBe('636');
     expect(parsed.summary.total.played).toBe(2);
     expect(parsed.chart).toEqual({ won: 1, drawn: 0, lost: 1 });
-    expect(parsed.matches).toEqual([
-      expect.objectContaining({
-        matchId: 'M1',
-        isHome: true,
-        teamScore: 2,
-        opponentScore: 1,
-        result: 'won',
-        competition: 'league'
-      }),
-      expect.objectContaining({
-        matchId: 'M2',
-        isHome: false,
-        teamScore: 1,
-        opponentScore: 2,
-        result: 'lost',
-        competition: 'cup'
-      })
-    ]);
+    expect(parsed.filters).toEqual({ competition: 'all', result: 'all' });
   });
 });

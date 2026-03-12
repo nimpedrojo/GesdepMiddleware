@@ -33,12 +33,15 @@ export const registerAuthRoute = (app: FastifyInstance) => {
     schema: {
       tags: ['auth'],
       summary: 'Obtiene un token Bearer para consumir la API',
+      description:
+        'Valida las credenciales propias de la API y devuelve un JWT Bearer. ' +
+        'Ese token debe enviarse en el header Authorization para consumir los endpoints protegidos.',
       body: {
         type: 'object',
         required: ['username', 'password'],
         properties: {
-          username: { type: 'string' },
-          password: { type: 'string' }
+          username: { type: 'string', description: 'Usuario configurado en API_AUTH_USERNAME' },
+          password: { type: 'string', description: 'Password configurado en API_AUTH_PASSWORD' }
         }
       },
       response: {
@@ -49,6 +52,12 @@ export const registerAuthRoute = (app: FastifyInstance) => {
             accessToken: { type: 'string' },
             tokenType: { type: 'string', enum: ['Bearer'] },
             expiresIn: { type: 'string' }
+          }
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' }
           }
         }
       }

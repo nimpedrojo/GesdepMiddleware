@@ -27,7 +27,7 @@ export const registerTeamMatchStatsRoute = (app: FastifyInstance, deps: Register
       summary: 'Estadisticas y partidos jugados por equipo',
       description:
         'Devuelve resumen y listado de partidos de la temporada actual para un equipo. ' +
-        'Lee desde MySQL si el batch diario ya materializo el snapshot de temporada; en otro caso hace consulta online a Gesdep.',
+        'Lee desde MySQL si el batch diario ya materializo el snapshot de estadisticas por competicion y resultado; en otro caso hace consulta online a Gesdep.',
       security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
@@ -50,7 +50,7 @@ export const registerTeamMatchStatsRoute = (app: FastifyInstance, deps: Register
           properties: {
             item: {
               type: 'object',
-              required: ['teamId', 'teamName', 'filters', 'summary', 'chart', 'matches'],
+              required: ['teamId', 'teamName', 'filters', 'summary', 'chart'],
               properties: {
                 teamId: { type: 'string' },
                 teamName: { type: ['string', 'null'] },
@@ -78,26 +78,6 @@ export const registerTeamMatchStatsRoute = (app: FastifyInstance, deps: Register
                     won: { type: 'integer', minimum: 0 },
                     drawn: { type: 'integer', minimum: 0 },
                     lost: { type: 'integer', minimum: 0 }
-                  }
-                },
-                matches: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    required: ['matchId', 'teamId', 'teamName', 'opponentName', 'isHome', 'teamScore', 'opponentScore', 'result', 'competition', 'kickoffAt', 'venue'],
-                    properties: {
-                      matchId: { type: 'string' },
-                      teamId: { type: 'string' },
-                      teamName: { type: 'string' },
-                      opponentName: { type: 'string' },
-                      isHome: { type: 'boolean' },
-                      teamScore: { type: 'integer', minimum: 0 },
-                      opponentScore: { type: 'integer', minimum: 0 },
-                      result: { type: 'string', enum: ['won', 'drawn', 'lost'] },
-                      competition: { type: 'string', enum: ['league', 'cup', 'friendly', 'tournament'] },
-                      kickoffAt: { type: 'string' },
-                      venue: { type: ['string', 'null'] }
-                    }
                   }
                 }
               }

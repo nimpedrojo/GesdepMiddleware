@@ -30,7 +30,9 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
     openapi: {
       info: {
         title: 'Gesdep Middleware API',
-        description: 'REST API sobre Gesdep.net con cache y lectura desde MySQL.',
+        description:
+          'REST API sobre Gesdep.net con cache en memoria, lectura desde MySQL y fallback online a Gesdep cuando aplica. ' +
+          'Los endpoints protegidos requieren un Bearer token obtenido en /auth/token.',
         version: '0.1.0'
       },
       servers: [
@@ -61,7 +63,8 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
     routePrefix: '/docs',
     uiConfig: {
       docExpansion: 'list',
-      deepLinking: false
+      deepLinking: true,
+      persistAuthorization: true
     }
   });
   registerAuthRoute(app);

@@ -183,13 +183,19 @@ export class GesdepSyncService {
       }
 
       if (this.deps.teamMatchStatsUseCase) {
+        const competitions = ['all', 'league', 'cup', 'friendly', 'tournament'] as const;
+        const results = ['all', 'won', 'drawn', 'lost'] as const;
         for (const team of teams) {
-          try {
-            const stats = await this.deps.teamMatchStatsUseCase.execute(team.id, 'all', 'all', team.name ?? undefined);
-            await this.teamMatchStatsRepository.replaceAllForTeam(team.id, stats.item.matches, syncedAt);
-            teamMatchSnapshots += 1;
-          } catch (error) {
-            logger.warn({ err: error, teamId: team.id }, 'Team match stats snapshot sync failed for team');
+          for (const competition of competitions) {
+            for (const result of results) {
+              try {
+                const stats = await this.deps.teamMatchStatsUseCase.execute(team.id, competition, result, team.name ?? undefined);
+                await this.teamMatchStatsRepository.replaceSnapshot(team.id, competition, result, stats.item, syncedAt);
+                teamMatchSnapshots += 1;
+              } catch (error) {
+                logger.warn({ err: error, teamId: team.id, competition, result }, 'Team match stats snapshot sync failed for team');
+              }
+            }
           }
         }
       }

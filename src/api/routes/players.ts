@@ -21,12 +21,18 @@ export const registerPlayersRoute = (app: FastifyInstance, deps: RegisterPlayers
     schema: {
       tags: ['players'],
       summary: 'Detalle de un jugador',
+      description:
+        'Devuelve la ficha detallada de un jugador por su identificador externo de Gesdep. ' +
+        'Lee desde MySQL cuando existe snapshot local y hace fallback online a Gesdep cuando falta informacion.',
       security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: {
+            type: 'string',
+            description: 'Identificador externo del jugador en Gesdep'
+          }
         }
       },
       response: {
@@ -55,6 +61,12 @@ export const registerPlayersRoute = (app: FastifyInstance, deps: RegisterPlayers
               properties: {
                 source: { type: 'string', enum: ['gesdep', 'mysql'] }
               }
+            }
+          },
+          401: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
             }
           }
         }

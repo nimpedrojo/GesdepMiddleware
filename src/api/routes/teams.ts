@@ -20,6 +20,9 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
     schema: {
       tags: ['teams'],
       summary: 'Listado básico de equipos',
+      description:
+        'Devuelve el listado de equipos de la temporada actual. ' +
+        'Lee desde MySQL cuando existe snapshot local y hace fallback online a Gesdep cuando no hay datos persistidos.',
       security: [{ bearerAuth: [] }],
       response: {
         200: {
@@ -48,6 +51,12 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
                 count: { type: 'integer', minimum: 0 }
               }
             }
+          },
+          401: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -64,6 +73,9 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
     schema: {
       tags: ['teams'],
       summary: 'Listado extendido de equipos con roster',
+      description:
+        'Devuelve los equipos con el roster de jugadores asociado. ' +
+        'Usa MySQL cuando existe snapshot persistido y hace fallback a Gesdep si todavia no hay datos locales.',
       security: [{ bearerAuth: [] }],
       response: {
         200: {
@@ -103,6 +115,12 @@ export const registerTeamsRoute = (app: FastifyInstance, deps: RegisterTeamsRout
                 source: { type: 'string', enum: ['gesdep', 'mysql'] },
                 count: { type: 'integer', minimum: 0 }
               }
+            }
+          },
+          401: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
             }
           }
         }

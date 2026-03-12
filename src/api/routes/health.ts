@@ -8,6 +8,7 @@ export const registerHealthRoute = (app: FastifyInstance) => {
     schema: {
       tags: ['health'],
       summary: 'Estado del servicio',
+      description: 'Comprueba que la API esta levantada y responde con timestamp del servidor.',
       response: {
         200: {
           type: 'object',

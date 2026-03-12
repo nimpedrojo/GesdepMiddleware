@@ -37,8 +37,17 @@ export class GetTeamMatchStatsUseCase {
     const html = await this.deps.navigator.fetchTeamMatchStatsHtml(teamId, competition, result, teamName);
 
     try {
+      const parsed = this.parser.parse(html);
       return teamMatchStatsResponseSchema.parse({
-        item: this.parser.parse(html),
+        item: {
+          ...parsed,
+          teamId,
+          teamName: parsed.teamName ?? teamName ?? null,
+          filters: {
+            competition,
+            result
+          }
+        },
         meta: {
           source: 'gesdep'
         }

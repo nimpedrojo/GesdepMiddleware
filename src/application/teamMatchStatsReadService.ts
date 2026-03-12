@@ -26,7 +26,7 @@ export class TeamMatchStatsReadService {
     const cacheKey = `team-match-stats:${teamId}:${competition}:${result}`;
     return this.cache.remember(cacheKey, 300, async () => {
       const dbPayload = await this.repository.get(teamId, competition, result);
-      if (dbPayload && dbPayload.item.matches.length > 0) {
+      if (dbPayload) {
         return dbPayload;
       }
 

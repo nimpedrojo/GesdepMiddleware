@@ -10,6 +10,7 @@ import { AppError } from '../shared/errors.js';
 import { registerTeamsRoute, RegisterTeamsRouteDeps } from './routes/teams.js';
 import { registerPlayersRoute, RegisterPlayersRouteDeps } from './routes/players.js';
 import { registerTeamWorkStatsRoute, RegisterTeamWorkStatsRouteDeps } from './routes/teamWorkStats.js';
+import { registerTeamMatchStatsRoute, RegisterTeamMatchStatsRouteDeps } from './routes/teamMatchStats.js';
 import { ensureDatabaseSchema } from '../db/schema.js';
 import { authPlugin } from './auth.js';
 
@@ -17,6 +18,7 @@ export interface BuildServerDeps {
   teamsRoute?: RegisterTeamsRouteDeps;
   playersRoute?: RegisterPlayersRouteDeps;
   teamWorkStatsRoute?: RegisterTeamWorkStatsRouteDeps;
+  teamMatchStatsRoute?: RegisterTeamMatchStatsRouteDeps;
 }
 
 export const buildServer = (deps: BuildServerDeps = {}) => {
@@ -67,6 +69,7 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
   registerTeamsRoute(app, deps.teamsRoute);
   registerPlayersRoute(app, deps.playersRoute);
   registerTeamWorkStatsRoute(app, deps.teamWorkStatsRoute);
+  registerTeamMatchStatsRoute(app, deps.teamMatchStatsRoute);
 
   app.setErrorHandler((err, _req, reply) => {
     const status = err instanceof AppError ? err.statusCode : 500;

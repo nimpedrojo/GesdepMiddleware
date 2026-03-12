@@ -19,6 +19,7 @@ export const buildPlayerDetailUrl = (playerId: string): URL => {
 };
 
 export const buildTeamWorkStatsUrl = (): URL => new URL(selectors.workStats.path, config.GESDEP_BASE_URL);
+export const buildTeamMatchStatsUrl = (): URL => new URL(selectors.matchStats.path, config.GESDEP_BASE_URL);
 
 const normalizeComparableText = (value: string | null | undefined) =>
   value
@@ -103,6 +104,33 @@ export class GesdepClient {
     throw new ExternalServiceError('Team is not available in Gesdep work stats selector', {
       teamId,
       teamName
+    });
+  }
+
+  private async resolveSelectOptionValue(page: Page, selector: string, targetValue: string, targetText?: string) {
+    const optionValues = await page.locator(`${selector} option`).evaluateAll((options) =>
+      options.map((option) => ({
+        value: option.getAttribute('value') ?? '',
+        text: option.textContent?.trim() ?? ''
+      }))
+    );
+
+    if (optionValues.some((option) => option.value === targetValue)) {
+      return targetValue;
+    }
+
+    if (targetText) {
+      const normalizedTarget = normalizeComparableText(targetText);
+      const byName = optionValues.find((option) => normalizeComparableText(option.text) === normalizedTarget);
+      if (byName) {
+        return byName.value;
+      }
+    }
+
+    throw new ExternalServiceError('Option is not available in Gesdep selector', {
+      selector,
+      targetValue,
+      targetText
     });
   }
 
@@ -265,6 +293,53 @@ export class GesdepClient {
     } catch (err) {
       logger.error({ err, teamId, teamName, from, to }, 'Reading team work stats HTML failed');
       throw new ExternalServiceError('Failed to read Gesdep team work stats HTML');
+    } finally {
+      await page.close();
+    }
+  }
+
+  async fetchTeamMatchStatsHtml(
+    teamId: string,
+    competition: 'all' | 'league' | 'cup' | 'friendly' | 'tournament',
+    result: 'all' | 'won' | 'drawn' | 'lost',
+    teamName?: string
+  ): Promise<string> {
+    const page = await this.openAuthenticatedPage();
+
+    try {
+      await page.goto(buildTeamMatchStatsUrl().toString(), {
+        waitUntil: 'domcontentloaded'
+      });
+      await page.waitForSelector(selectors.matchStats.ready, {
+        state: 'attached'
+      });
+
+      const statsTeamValue = await this.resolveSelectOptionValue(page, selectors.matchStats.team, teamId, teamName);
+      await page.selectOption(selectors.matchStats.team, statsTeamValue);
+
+      const competitionValue =
+        competition === 'league' ? '1'
+          : competition === 'cup' ? '2'
+            : competition === 'friendly' ? '3'
+              : competition === 'tournament' ? '4'
+                : '0';
+      await page.selectOption(selectors.matchStats.competition, competitionValue);
+
+      const resultSelector =
+        result === 'won' ? selectors.matchStats.resultWon
+          : result === 'drawn' ? selectors.matchStats.resultDrawn
+            : result === 'lost' ? selectors.matchStats.resultLost
+              : selectors.matchStats.resultAll;
+      await page.check(resultSelector);
+      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+
+      await page.waitForSelector(selectors.matchStats.summary, { state: 'attached' });
+      await page.waitForSelector(selectors.matchStats.list, { state: 'attached' });
+
+      return await page.content();
+    } catch (err) {
+      logger.error({ err, teamId, teamName, competition, result }, 'Reading team match stats HTML failed');
+      throw new ExternalServiceError('Failed to read Gesdep team match stats HTML');
     } finally {
       await page.close();
     }

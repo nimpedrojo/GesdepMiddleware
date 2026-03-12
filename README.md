@@ -108,6 +108,7 @@ POST /auth/token
 GET /teams
 GET /teams/extended
 GET /teams/:teamId/work-stats?from=YYYY-MM-DD&to=YYYY-MM-DD
+GET /teams/:teamId/matches/stats?competition=all|league|cup|friendly|tournament&result=all|won|drawn|lost
 GET /players/:id
 GET /docs
 GET /docs/json
@@ -118,6 +119,7 @@ Autenticacion:
 - `GET /teams`
 - `GET /teams/extended`
 - `GET /teams/:teamId/work-stats?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /teams/:teamId/matches/stats?competition=all|league|cup|friendly|tournament&result=all|won|drawn|lost`
 - `GET /players/:id`
 
 Ejemplo:
@@ -139,6 +141,12 @@ curl "http://localhost:3000/teams/636/work-stats?from=2026-03-01&to=2026-03-07" 
   -H "authorization: Bearer TU_TOKEN"
 ```
 
+Ejemplo de partidos jugados:
+```bash
+curl "http://localhost:3000/teams/636/matches/stats?competition=league&result=all" \
+  -H "authorization: Bearer TU_TOKEN"
+```
+
 Semántica actual:
 - `/auth/token`:
   - valida credenciales propias de la API
@@ -157,6 +165,11 @@ Semántica actual:
   - intenta responder desde cache y MySQL si el rango completo ya fue materializado por el batch diario
   - si falta algun dia del rango, hace fallback online a Gesdep
   - devuelve agregados por metodo de entrenamiento y el Top 20 de ejercicios
+- `/teams/:teamId/matches/stats`:
+  - acepta filtros opcionales `competition` y `result`
+  - intenta responder desde cache y MySQL si existe snapshot de temporada del equipo
+  - si no existe snapshot local, hace fallback online a Gesdep
+  - devuelve resumen global/local/visitante y el listado de partidos filtrado
 
 El campo `meta.source` puede ser:
 - `mysql`
@@ -187,6 +200,7 @@ El proceso:
 - registra una fila en `sync_runs`
 - sincroniza equipos y jugadores
 - sincroniza las estadisticas de trabajo del dia anterior por equipo
+- sincroniza el snapshot completo de partidos de temporada por equipo
 - reemplaza el snapshot persistido
 - limpia la cache en memoria
 
@@ -197,6 +211,7 @@ Tablas creadas automáticamente:
 - `team_work_daily_sync`
 - `team_work_method_daily`
 - `team_work_exercise_daily`
+- `team_matches`
 - `sync_runs`
 
 ## Flujo de estadisticas de trabajo
@@ -217,6 +232,19 @@ Flujo batch diario para estas estadisticas:
 
 Limitacion relevante:
 - Gesdep devuelve agregados por rango. Para que MySQL pueda responder rangos arbitrarios sin volver a Gesdep, el batch guarda datos diarios por equipo. Si falta un dia intermedio, la API cae a lectura online.
+
+## Flujo de partidos jugados
+Lectura de `GET /teams/:teamId/matches/stats`:
+1. La API valida `teamId` y aplica filtros opcionales `competition` y `result`
+2. Busca en cache de memoria para la clave `team-match-stats:{teamId}:{competition}:{result}`
+3. Si existe snapshot local en `team_matches`, filtra y agrega desde MySQL
+4. Si no existe snapshot local, consulta online Gesdep en `frmpartidos.aspx`
+5. La respuesta informa el origen en `meta.source`
+
+Flujo batch diario para partidos:
+1. Al ejecutar `npm run sync:gesdep`, por cada equipo se consulta `frmpartidos.aspx` sin filtros
+2. Se guarda el snapshot completo de partidos de la temporada actual en `team_matches`
+3. Los filtros por competición y resultado se resuelven después desde MySQL sin volver a Gesdep
 
 Ejemplo de operación diaria con cron:
 ```bash

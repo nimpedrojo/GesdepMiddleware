@@ -84,6 +84,58 @@ export const teamWorkStatsResponseSchema = z.object({
   })
 });
 
+export const matchCompetitionSchema = z.enum(['all', 'league', 'cup', 'friendly', 'tournament']);
+export const matchResultFilterSchema = z.enum(['all', 'won', 'drawn', 'lost']);
+
+export const teamMatchSchema = z.object({
+  matchId: z.string(),
+  teamId: z.string(),
+  teamName: z.string(),
+  opponentName: z.string(),
+  isHome: z.boolean(),
+  teamScore: z.number().int().nonnegative(),
+  opponentScore: z.number().int().nonnegative(),
+  result: z.enum(['won', 'drawn', 'lost']),
+  competition: matchCompetitionSchema.exclude(['all']),
+  kickoffAt: z.string(),
+  venue: z.string().nullable()
+});
+
+export const matchStatsBlockSchema = z.object({
+  played: z.number().int().nonnegative(),
+  won: z.number().int().nonnegative(),
+  drawn: z.number().int().nonnegative(),
+  lost: z.number().int().nonnegative(),
+  goalsFor: z.number().int().nonnegative(),
+  goalsAgainst: z.number().int().nonnegative(),
+  points: z.number().int().nonnegative()
+});
+
+export const teamMatchStatsResponseSchema = z.object({
+  item: z.object({
+    teamId: z.string(),
+    teamName: z.string().nullable(),
+    filters: z.object({
+      competition: matchCompetitionSchema,
+      result: matchResultFilterSchema
+    }),
+    summary: z.object({
+      total: matchStatsBlockSchema,
+      home: matchStatsBlockSchema,
+      away: matchStatsBlockSchema
+    }),
+    chart: z.object({
+      won: z.number().int().nonnegative(),
+      drawn: z.number().int().nonnegative(),
+      lost: z.number().int().nonnegative()
+    }),
+    matches: z.array(teamMatchSchema)
+  }),
+  meta: z.object({
+    source: sourceSchema
+  })
+});
+
 export type TeamListItem = z.infer<typeof basicTeamItemSchema>;
 export type TeamItem = z.infer<typeof extendedTeamItemSchema>;
 export type ListTeamsResponse = z.infer<typeof listTeamsResponseSchema>;
@@ -94,3 +146,8 @@ export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>;
 export type TeamWorkMethodStat = z.infer<typeof teamWorkMethodStatSchema>;
 export type TeamWorkExerciseStat = z.infer<typeof teamWorkExerciseStatSchema>;
 export type TeamWorkStatsResponse = z.infer<typeof teamWorkStatsResponseSchema>;
+export type MatchCompetition = z.infer<typeof matchCompetitionSchema>;
+export type MatchResultFilter = z.infer<typeof matchResultFilterSchema>;
+export type TeamMatch = z.infer<typeof teamMatchSchema>;
+export type MatchStatsBlock = z.infer<typeof matchStatsBlockSchema>;
+export type TeamMatchStatsResponse = z.infer<typeof teamMatchStatsResponseSchema>;

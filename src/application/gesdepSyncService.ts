@@ -8,6 +8,8 @@ import { logger } from '../shared/logger.js';
 import { memoryCache } from '../shared/memoryCache.js';
 import { GetTeamWorkStatsUseCase } from './getTeamWorkStatsUseCase.js';
 import { TeamWorkStatsRepository } from '../db/repositories/teamWorkStatsRepository.js';
+import { GetTeamMatchStatsUseCase } from './getTeamMatchStatsUseCase.js';
+import { TeamMatchStatsRepository } from '../db/repositories/teamMatchStatsRepository.js';
 
 const normalizeComparableText = (value: string | null | undefined) =>
   value
@@ -31,16 +33,20 @@ export interface GesdepSyncServiceDeps {
   playerUseCase: GetPlayerUseCase;
   teamWorkStatsUseCase?: GetTeamWorkStatsUseCase;
   teamWorkStatsRepository?: TeamWorkStatsRepository;
+  teamMatchStatsUseCase?: GetTeamMatchStatsUseCase;
+  teamMatchStatsRepository?: TeamMatchStatsRepository;
   knex?: Knex;
 }
 
 export class GesdepSyncService {
   private readonly knex: Knex;
   private readonly teamWorkStatsRepository: TeamWorkStatsRepository;
+  private readonly teamMatchStatsRepository: TeamMatchStatsRepository;
 
   constructor(private readonly deps: GesdepSyncServiceDeps) {
     this.knex = deps.knex ?? db;
     this.teamWorkStatsRepository = deps.teamWorkStatsRepository ?? new TeamWorkStatsRepository(this.knex);
+    this.teamMatchStatsRepository = deps.teamMatchStatsRepository ?? new TeamMatchStatsRepository(this.knex);
   }
 
   async syncAll() {
@@ -117,6 +123,7 @@ export class GesdepSyncService {
 
       let detailedPlayers = 0;
       let dailyTeamWorkStats = 0;
+      let teamMatchSnapshots = 0;
 
       try {
         const playerDetails =
@@ -175,6 +182,18 @@ export class GesdepSyncService {
         }
       }
 
+      if (this.deps.teamMatchStatsUseCase) {
+        for (const team of teams) {
+          try {
+            const stats = await this.deps.teamMatchStatsUseCase.execute(team.id, 'all', 'all', team.name ?? undefined);
+            await this.teamMatchStatsRepository.replaceAllForTeam(team.id, stats.item.matches, syncedAt);
+            teamMatchSnapshots += 1;
+          } catch (error) {
+            logger.warn({ err: error, teamId: team.id }, 'Team match stats snapshot sync failed for team');
+          }
+        }
+      }
+
       await this.knex('sync_runs')
         .where({ id: runId })
         .update({
@@ -184,7 +203,8 @@ export class GesdepSyncService {
             teams: teams.length,
             players: basicPlayers.length,
             detailedPlayers,
-            dailyTeamWorkStats
+            dailyTeamWorkStats,
+            teamMatchSnapshots
           })
         });
 
@@ -193,7 +213,8 @@ export class GesdepSyncService {
       return {
         teams: teams.length,
         players: basicPlayers.length,
-        dailyTeamWorkStats
+        dailyTeamWorkStats,
+        teamMatchSnapshots
       };
     } catch (error) {
       await this.knex('sync_runs')

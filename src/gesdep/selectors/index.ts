@@ -43,5 +43,18 @@ export const selectors = {
     search: '#ctl00_ContentPlaceHolder1_btnBusca',
     chart: '#graf3',
     top20: '#ctl00_ContentPlaceHolder1_lblTop20'
+  },
+  matchStats: {
+    path: '/v3/forms/competitions/frmpartidos.aspx',
+    ready: '#ctl00_ContentPlaceHolder1_lblCalresul',
+    team: '#ctl00_ContentPlaceHolder1_cmbEquipos',
+    competition: '#ctl00_ContentPlaceHolder1_cmbCompeticiones',
+    resultAll: '#ctl00_ContentPlaceHolder1_verTodos',
+    resultWon: '#ctl00_ContentPlaceHolder1_verGanados',
+    resultDrawn: '#ctl00_ContentPlaceHolder1_verEmpatados',
+    resultLost: '#ctl00_ContentPlaceHolder1_VerPerdidos',
+    summary: '#ctl00_ContentPlaceHolder1_lblEstadisticas',
+    list: '#ctl00_ContentPlaceHolder1_lblLista',
+    chart: '#container'
   }
 };

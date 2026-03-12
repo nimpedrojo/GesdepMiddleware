@@ -37,8 +37,15 @@ describe('TeamMatchStatsParser', () => {
     const parsed = parser.parse(html);
 
     expect(parsed.teamId).toBe('636');
-    expect(parsed.summary.total.played).toBe(2);
-    expect(parsed.chart).toEqual({ won: 1, drawn: 0, lost: 1 });
+    expect(parsed.stats.total).toEqual({
+      PJ: 2,
+      GA: 1,
+      EM: 0,
+      PE: 1,
+      GF: 3,
+      GC: 3,
+      PTS: 3
+    });
     expect(parsed.filters).toEqual({ competition: 'all', result: 'all' });
   });
 });

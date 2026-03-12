@@ -102,13 +102,13 @@ export const teamMatchSchema = z.object({
 });
 
 export const matchStatsBlockSchema = z.object({
-  played: z.number().int().nonnegative(),
-  won: z.number().int().nonnegative(),
-  drawn: z.number().int().nonnegative(),
-  lost: z.number().int().nonnegative(),
-  goalsFor: z.number().int().nonnegative(),
-  goalsAgainst: z.number().int().nonnegative(),
-  points: z.number().int().nonnegative()
+  PJ: z.number().int().nonnegative(),
+  GA: z.number().int().nonnegative(),
+  EM: z.number().int().nonnegative(),
+  PE: z.number().int().nonnegative(),
+  GF: z.number().int().nonnegative(),
+  GC: z.number().int().nonnegative(),
+  PTS: z.number().int().nonnegative()
 });
 
 export const teamMatchStatsResponseSchema = z.object({
@@ -119,15 +119,10 @@ export const teamMatchStatsResponseSchema = z.object({
       competition: matchCompetitionSchema,
       result: matchResultFilterSchema
     }),
-    summary: z.object({
+    stats: z.object({
       total: matchStatsBlockSchema,
-      home: matchStatsBlockSchema,
-      away: matchStatsBlockSchema
-    }),
-    chart: z.object({
-      won: z.number().int().nonnegative(),
-      drawn: z.number().int().nonnegative(),
-      lost: z.number().int().nonnegative()
+      local: matchStatsBlockSchema,
+      visitante: matchStatsBlockSchema
     })
   }),
   meta: z.object({

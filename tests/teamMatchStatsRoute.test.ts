@@ -12,12 +12,11 @@ describe('team match stats route', () => {
                 teamId,
                 teamName: 'JUVENIL PREFERENTE',
                 filters: { competition, result },
-                summary: {
-                  total: { played: 1, won: 1, drawn: 0, lost: 0, goalsFor: 2, goalsAgainst: 1, points: 3 },
-                  home: { played: 1, won: 1, drawn: 0, lost: 0, goalsFor: 2, goalsAgainst: 1, points: 3 },
-                  away: { played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
-                },
-                chart: { won: 1, drawn: 0, lost: 0 }
+                stats: {
+                  total: { PJ: 1, GA: 1, EM: 0, PE: 0, GF: 2, GC: 1, PTS: 3 },
+                  local: { PJ: 1, GA: 1, EM: 0, PE: 0, GF: 2, GC: 1, PTS: 3 },
+                  visitante: { PJ: 0, GA: 0, EM: 0, PE: 0, GF: 0, GC: 0, PTS: 0 }
+                }
               },
               meta: { source: 'mysql' as const }
             };

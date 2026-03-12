@@ -67,12 +67,15 @@ export const buildServer = (deps: BuildServerDeps = {}) => {
       persistAuthorization: true
     }
   });
-  registerAuthRoute(app);
-  registerHealthRoute(app);
-  registerTeamsRoute(app, deps.teamsRoute);
-  registerPlayersRoute(app, deps.playersRoute);
-  registerTeamWorkStatsRoute(app, deps.teamWorkStatsRoute);
-  registerTeamMatchStatsRoute(app, deps.teamMatchStatsRoute);
+
+  app.after(() => {
+    registerAuthRoute(app);
+    registerHealthRoute(app);
+    registerTeamsRoute(app, deps.teamsRoute);
+    registerPlayersRoute(app, deps.playersRoute);
+    registerTeamWorkStatsRoute(app, deps.teamWorkStatsRoute);
+    registerTeamMatchStatsRoute(app, deps.teamMatchStatsRoute);
+  });
 
   app.setErrorHandler((err, _req, reply) => {
     const status = err instanceof AppError ? err.statusCode : 500;

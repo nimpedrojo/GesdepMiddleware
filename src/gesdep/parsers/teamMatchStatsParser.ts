@@ -26,13 +26,13 @@ const resultFromScores = (teamScore: number, opponentScore: number): Exclude<Mat
 };
 
 const emptyBlock = (): MatchStatsBlock => ({
-  played: 0,
-  won: 0,
-  drawn: 0,
-  lost: 0,
-  goalsFor: 0,
-  goalsAgainst: 0,
-  points: 0
+  PJ: 0,
+  GA: 0,
+  EM: 0,
+  PE: 0,
+  GF: 0,
+  GC: 0,
+  PTS: 0
 });
 
 const summarizeMatches = (matches: TeamMatch[]) => {
@@ -43,22 +43,22 @@ const summarizeMatches = (matches: TeamMatch[]) => {
   for (const match of matches) {
     const target = match.isHome ? home : away;
     for (const block of [total, target]) {
-      block.played += 1;
-      block.goalsFor += match.teamScore;
-      block.goalsAgainst += match.opponentScore;
+      block.PJ += 1;
+      block.GF += match.teamScore;
+      block.GC += match.opponentScore;
       if (match.result === 'won') {
-        block.won += 1;
-        block.points += 3;
+        block.GA += 1;
+        block.PTS += 3;
       } else if (match.result === 'drawn') {
-        block.drawn += 1;
-        block.points += 1;
+        block.EM += 1;
+        block.PTS += 1;
       } else {
-        block.lost += 1;
+        block.PE += 1;
       }
     }
   }
 
-  return { total, home, away };
+  return { total, local: home, visitante: away };
 };
 
 const parseSummaryValues = (html: string) => {
@@ -75,19 +75,19 @@ const parseSummaryValues = (html: string) => {
   }
 
   const toBlock = (offset: number): MatchStatsBlock => ({
-    played: values[offset],
-    won: values[offset + 1],
-    drawn: values[offset + 2],
-    lost: values[offset + 3],
-    goalsFor: values[offset + 4],
-    goalsAgainst: values[offset + 5],
-    points: values[offset + 6]
+    PJ: values[offset],
+    GA: values[offset + 1],
+    EM: values[offset + 2],
+    PE: values[offset + 3],
+    GF: values[offset + 4],
+    GC: values[offset + 5],
+    PTS: values[offset + 6]
   });
 
   return {
     total: toBlock(0),
-    home: toBlock(7),
-    away: toBlock(14)
+    local: toBlock(7),
+    visitante: toBlock(14)
   };
 };
 
@@ -147,7 +147,7 @@ export class TeamMatchStatsParser {
       });
     });
 
-    const summary = parseSummaryValues(html) ?? summarizeMatches(matches);
+    const stats = parseSummaryValues(html) ?? summarizeMatches(matches);
 
     return teamMatchStatsResponseSchema.shape.item.parse({
       teamId,
@@ -161,12 +161,7 @@ export class TeamMatchStatsParser {
                   : 'all',
         result: resultSelected
       },
-      summary,
-      chart: {
-        won: summary.total.won,
-        drawn: summary.total.drawn,
-        lost: summary.total.lost
-      }
+      stats
     });
   }
 }

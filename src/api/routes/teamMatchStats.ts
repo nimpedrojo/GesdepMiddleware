@@ -26,7 +26,7 @@ export const registerTeamMatchStatsRoute = (app: FastifyInstance, deps: Register
       tags: ['teams', 'stats'],
       summary: 'Estadisticas y partidos jugados por equipo',
       description:
-        'Devuelve resumen y listado de partidos de la temporada actual para un equipo. ' +
+        'Devuelve la tabla de estadisticas de partidos jugados de la temporada actual para un equipo. ' +
         'Lee desde MySQL si el batch diario ya materializo el snapshot de estadisticas por competicion y resultado; en otro caso hace consulta online a Gesdep.',
       security: [{ bearerAuth: [] }],
       params: {
@@ -50,7 +50,7 @@ export const registerTeamMatchStatsRoute = (app: FastifyInstance, deps: Register
           properties: {
             item: {
               type: 'object',
-              required: ['teamId', 'teamName', 'filters', 'summary', 'chart'],
+              required: ['teamId', 'teamName', 'filters', 'stats'],
               properties: {
                 teamId: { type: 'string' },
                 teamName: { type: ['string', 'null'] },
@@ -62,22 +62,46 @@ export const registerTeamMatchStatsRoute = (app: FastifyInstance, deps: Register
                     result: { type: 'string', enum: resultEnum }
                   }
                 },
-                summary: {
+                stats: {
                   type: 'object',
-                  required: ['total', 'home', 'away'],
+                  required: ['total', 'local', 'visitante'],
                   properties: {
-                    total: { type: 'object' },
-                    home: { type: 'object' },
-                    away: { type: 'object' }
-                  }
-                },
-                chart: {
-                  type: 'object',
-                  required: ['won', 'drawn', 'lost'],
-                  properties: {
-                    won: { type: 'integer', minimum: 0 },
-                    drawn: { type: 'integer', minimum: 0 },
-                    lost: { type: 'integer', minimum: 0 }
+                    total: {
+                      type: 'object',
+                      properties: {
+                        PJ: { type: 'integer', minimum: 0 },
+                        GA: { type: 'integer', minimum: 0 },
+                        EM: { type: 'integer', minimum: 0 },
+                        PE: { type: 'integer', minimum: 0 },
+                        GF: { type: 'integer', minimum: 0 },
+                        GC: { type: 'integer', minimum: 0 },
+                        PTS: { type: 'integer', minimum: 0 }
+                      }
+                    },
+                    local: {
+                      type: 'object',
+                      properties: {
+                        PJ: { type: 'integer', minimum: 0 },
+                        GA: { type: 'integer', minimum: 0 },
+                        EM: { type: 'integer', minimum: 0 },
+                        PE: { type: 'integer', minimum: 0 },
+                        GF: { type: 'integer', minimum: 0 },
+                        GC: { type: 'integer', minimum: 0 },
+                        PTS: { type: 'integer', minimum: 0 }
+                      }
+                    },
+                    visitante: {
+                      type: 'object',
+                      properties: {
+                        PJ: { type: 'integer', minimum: 0 },
+                        GA: { type: 'integer', minimum: 0 },
+                        EM: { type: 'integer', minimum: 0 },
+                        PE: { type: 'integer', minimum: 0 },
+                        GF: { type: 'integer', minimum: 0 },
+                        GC: { type: 'integer', minimum: 0 },
+                        PTS: { type: 'integer', minimum: 0 }
+                      }
+                    }
                   }
                 }
               }

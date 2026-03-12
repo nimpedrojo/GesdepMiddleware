@@ -4,6 +4,7 @@ import {
   MatchResultFilter,
   TeamMatch,
   TeamMatchStatsResponse,
+  MatchStatsBlock,
   teamMatchStatsResponseSchema
 } from '../../domain/types.js';
 import { ParsingError } from '../../shared/errors.js';
@@ -24,33 +25,40 @@ const resultFromScores = (teamScore: number, opponentScore: number): Exclude<Mat
   return 'drawn';
 };
 
-const parseSummaryValues = (html: string) => {
-  const $ = load(html);
-  const values = $('#ctl00_ContentPlaceHolder1_lblEstadisticas td[bgcolor=\"White\"], #ctl00_ContentPlaceHolder1_lblEstadisticas td[bgcolor=\"white\"]')
-    .map((_index, element) => normalizeText($(element).text()))
-    .get()
-    .filter(Boolean)
-    .map((value) => Number(value));
+const emptyBlock = (): MatchStatsBlock => ({
+  played: 0,
+  won: 0,
+  drawn: 0,
+  lost: 0,
+  goalsFor: 0,
+  goalsAgainst: 0,
+  points: 0
+});
 
-  if (values.length !== 21) {
-    throw new ParsingError('Invalid match stats page structure: summary values not found');
+const summarizeMatches = (matches: TeamMatch[]) => {
+  const total = emptyBlock();
+  const home = emptyBlock();
+  const away = emptyBlock();
+
+  for (const match of matches) {
+    const target = match.isHome ? home : away;
+    for (const block of [total, target]) {
+      block.played += 1;
+      block.goalsFor += match.teamScore;
+      block.goalsAgainst += match.opponentScore;
+      if (match.result === 'won') {
+        block.won += 1;
+        block.points += 3;
+      } else if (match.result === 'drawn') {
+        block.drawn += 1;
+        block.points += 1;
+      } else {
+        block.lost += 1;
+      }
+    }
   }
 
-  const toBlock = (offset: number) => ({
-    played: values[offset],
-    won: values[offset + 1],
-    drawn: values[offset + 2],
-    lost: values[offset + 3],
-    goalsFor: values[offset + 4],
-    goalsAgainst: values[offset + 5],
-    points: values[offset + 6]
-  });
-
-  return {
-    total: toBlock(0),
-    home: toBlock(7),
-    away: toBlock(14)
-  };
+  return { total, home, away };
 };
 
 const extractMatchIdFromOnClick = (value?: string | null) => {
@@ -109,7 +117,7 @@ export class TeamMatchStatsParser {
       });
     });
 
-    const summary = parseSummaryValues(html);
+    const summary = summarizeMatches(matches);
 
     return teamMatchStatsResponseSchema.shape.item.parse({
       teamId,
